@@ -4,46 +4,35 @@ const list = document.getElementById('todo-list');
 const countEl = document.getElementById('todo-count');
 const filterButtons = document.querySelectorAll('.filter');
 
-let todos = [];
+let todos = JSON.parse(localStorage.getItem('todos') || '[]');
 let currentFilter = 'all';
 
-async function fetchTodos() {
-  const res = await fetch('/api/todos');
-  todos = await res.json();
+function saveTodos() {
+  localStorage.setItem('todos', JSON.stringify(todos));
+}
+
+function addTodo(title) {
+  const todo = {
+    id: crypto.randomUUID(),
+    title,
+    completed: false,
+    createdAt: new Date().toISOString(),
+  };
+  todos.push(todo);
+  saveTodos();
   render();
 }
 
-async function addTodo(title) {
-  const res = await fetch('/api/todos', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title }),
-  });
-  if (res.ok) {
-    todos.push(await res.json());
-    render();
-  }
+function toggleTodo(id, completed) {
+  todos = todos.map((t) => (t.id === id ? { ...t, completed } : t));
+  saveTodos();
+  render();
 }
 
-async function toggleTodo(id, completed) {
-  const res = await fetch(`/api/todos/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ completed }),
-  });
-  if (res.ok) {
-    const updated = await res.json();
-    todos = todos.map((t) => (t.id === id ? updated : t));
-    render();
-  }
-}
-
-async function deleteTodo(id) {
-  const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-  if (res.ok) {
-    todos = todos.filter((t) => t.id !== id);
-    render();
-  }
+function deleteTodo(id) {
+  todos = todos.filter((t) => t.id !== id);
+  saveTodos();
+  render();
 }
 
 function filteredTodos() {
@@ -100,4 +89,4 @@ filterButtons.forEach((btn) => {
   });
 });
 
-fetchTodos();
+render();
